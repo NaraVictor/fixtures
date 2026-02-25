@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { AdminActions } from "@/components/admin-actions";
 
 export const revalidate = 60;
 
@@ -13,7 +14,8 @@ export default async function Home({
   const supabase = createClient(await cookies());
   const validStatuses = ["scheduled", "live", "finished"] as const;
   const status =
-    params.status && validStatuses.includes(params.status as (typeof validStatuses)[number])
+    params.status &&
+    validStatuses.includes(params.status as (typeof validStatuses)[number])
       ? params.status
       : undefined;
 
@@ -53,19 +55,19 @@ export default async function Home({
         <p className="text-gray-600">Predictions and results</p>
       </header>
 
+      <AdminActions />
+
       <div className="mb-4 flex flex-wrap gap-2">
         <Link
           href="/"
-          className={`rounded px-3 py-1 text-sm ${!status ? "bg-primary text-white" : "bg-gray-200"}`}
-        >
+          className={`rounded px-3 py-1 text-sm ${!status ? "bg-primary text-white" : "bg-gray-200"}`}>
           All
         </Link>
         {(["scheduled", "live", "finished"] as const).map((s) => (
           <Link
             key={s}
             href={status === s ? "/" : `/?status=${s}`}
-            className={`rounded px-3 py-1 text-sm capitalize ${status === s ? "bg-primary text-white" : "bg-gray-200"}`}
-          >
+            className={`rounded px-3 py-1 text-sm capitalize ${status === s ? "bg-primary text-white" : "bg-gray-200"}`}>
             {s}
           </Link>
         ))}
@@ -75,33 +77,34 @@ export default async function Home({
         <p className="text-gray-500">No predictions yet.</p>
       ) : (
         <ul className="space-y-3">
-          {(predictions as unknown as Array<{
-            id: string;
-            status: string;
-            prediction_type: string;
-            predicted_value: string;
-            confidence_score: number | null;
-            fixture: {
+          {(
+            predictions as unknown as Array<{
               id: string;
-              slug: string;
-              fixture_date: string;
-              started_at: string | null;
               status: string;
-              home_goals: number | null;
-              away_goals: number | null;
-              home_team: { name: string };
-              away_team: { name: string };
-              league: { name: string; slug: string };
-            };
-          }>).map((p) => {
+              prediction_type: string;
+              predicted_value: string;
+              confidence_score: number | null;
+              fixture: {
+                id: string;
+                slug: string;
+                fixture_date: string;
+                started_at: string | null;
+                status: string;
+                home_goals: number | null;
+                away_goals: number | null;
+                home_team: { name: string };
+                away_team: { name: string };
+                league: { name: string; slug: string };
+              };
+            }>
+          ).map((p) => {
             const f = p.fixture;
             if (!f) return null;
             return (
               <li key={p.id} className="rounded border border-gray-200 p-3">
                 <Link
                   href={`/fixture/${f.slug}`}
-                  className="block font-medium hover:underline"
-                >
+                  className="block font-medium hover:underline">
                   {f.home_team?.name ?? "Home"} v {f.away_team?.name ?? "Away"}
                 </Link>
                 <div className="mt-1 flex items-center gap-2 text-sm text-gray-600">

@@ -24,8 +24,8 @@ Date-based snapshot of the Fixtures app before the lean/Gemini-only refactor.
 ## What was kept in main app
 
 - **Routes:** Home (`/`), Fixture detail (`/fixture/[slug]`).
-- **Lib:** `lib/supabase` (client, server), `lib/db/types.ts`, `lib/analysis.ts`, `lib/index.ts`.
-- **DB:** Existing Supabase schema (leagues, teams, fixtures, predictions, etc.) unchanged.
+- **Lib:** `lib/supabase` (client, server), `lib/analysis.ts`, `lib/index.ts`.
+- **DB:** Existing Supabase schema (leagues, teams, fixtures, predictions, etc.) unchanged. Types are now derived from `supabase/config/tables.json` as the single source of truth.
 
 ## Restoring
 
