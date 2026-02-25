@@ -4,6 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Fixtures – AI predictions",
   description: "AI-powered sports predictions and results",
+  themeColor: "#0b835c",
 };
 
 export default function RootLayout({

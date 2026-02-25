@@ -1,17 +1,22 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { BetslipConfigurator } from "@/app/components/betslip-configurator";
 
 export const revalidate = 60;
 
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ league?: string; status?: string; team?: string }>;
+  searchParams: Promise<{ status?: string }>;
 }) {
   const params = await searchParams;
   const supabase = createClient(await cookies());
+  const validStatuses = ["scheduled", "live", "finished"] as const;
+  const status =
+    params.status && validStatuses.includes(params.status as (typeof validStatuses)[number])
+      ? params.status
+      : undefined;
+
   let query = supabase
     .from("predictions")
     .select(
@@ -19,16 +24,19 @@ export default async function Home({
     )
     .order("created_at", { ascending: false })
     .limit(100);
-  if (params.status) {
-    const { data: fixtureRows } = await supabase
+
+  if (status) {
+    const { data: rows } = await supabase
       .from("fixtures")
       .select("id")
-      .eq("status", params.status);
-    const fixtureIds = (fixtureRows ?? []).map((r) => r.id);
-    if (fixtureIds.length) query = query.in("fixture_id", fixtureIds);
+      .eq("status", status);
+    const ids = (rows ?? []).map((r) => r.id);
+    if (ids.length) query = query.in("fixture_id", ids);
     else query = query.in("fixture_id", ["__none__"]);
   }
+
   const { data: predictions, error } = await query;
+
   if (error) {
     return (
       <main className="min-h-screen p-6">
@@ -45,58 +53,55 @@ export default async function Home({
         <p className="text-gray-600">Predictions and results</p>
       </header>
 
-      <BetslipConfigurator />
-
       <div className="mb-4 flex flex-wrap gap-2">
         <Link
           href="/"
-          className={`rounded px-3 py-1 text-sm ${!params.status ? "bg-gray-800 text-white" : "bg-gray-200"}`}>
+          className={`rounded px-3 py-1 text-sm ${!status ? "bg-primary text-white" : "bg-gray-200"}`}
+        >
           All
         </Link>
-        {["scheduled", "live", "finished"].map((s) => (
+        {(["scheduled", "live", "finished"] as const).map((s) => (
           <Link
             key={s}
-            href={s === params.status ? "/" : `/?status=${s}`}
-            className={`rounded px-3 py-1 text-sm capitalize ${params.status === s ? "bg-gray-800 text-white" : "bg-gray-200"}`}>
+            href={status === s ? "/" : `/?status=${s}`}
+            className={`rounded px-3 py-1 text-sm capitalize ${status === s ? "bg-primary text-white" : "bg-gray-200"}`}
+          >
             {s}
           </Link>
         ))}
       </div>
 
       {!predictions?.length ? (
-        <p className="text-gray-500">
-          No predictions yet. Import CSV data from the office to get started.
-        </p>
+        <p className="text-gray-500">No predictions yet.</p>
       ) : (
         <ul className="space-y-3">
-          {(
-            predictions as unknown as Array<{
+          {(predictions as unknown as Array<{
+            id: string;
+            status: string;
+            prediction_type: string;
+            predicted_value: string;
+            confidence_score: number | null;
+            fixture: {
               id: string;
+              slug: string;
+              fixture_date: string;
+              started_at: string | null;
               status: string;
-              prediction_type: string;
-              predicted_value: string;
-              confidence_score: number | null;
-              fixture: {
-                id: string;
-                slug: string;
-                fixture_date: string;
-                started_at: string | null;
-                status: string;
-                home_goals: number | null;
-                away_goals: number | null;
-                home_team: { name: string };
-                away_team: { name: string };
-                league: { name: string; slug: string };
-              };
-            }>
-          ).map((p) => {
+              home_goals: number | null;
+              away_goals: number | null;
+              home_team: { name: string };
+              away_team: { name: string };
+              league: { name: string; slug: string };
+            };
+          }>).map((p) => {
             const f = p.fixture;
             if (!f) return null;
             return (
               <li key={p.id} className="rounded border border-gray-200 p-3">
                 <Link
                   href={`/fixture/${f.slug}`}
-                  className="block font-medium hover:underline">
+                  className="block font-medium hover:underline"
+                >
                   {f.home_team?.name ?? "Home"} v {f.away_team?.name ?? "Away"}
                 </Link>
                 <div className="mt-1 flex items-center gap-2 text-sm text-gray-600">
@@ -122,12 +127,6 @@ export default async function Home({
           })}
         </ul>
       )}
-
-      <footer className="mt-8 text-sm text-gray-500">
-        <Link href="/office" className="underline">
-          Office
-        </Link>
-      </footer>
     </main>
   );
 }
