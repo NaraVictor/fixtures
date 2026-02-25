@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Fixtures app Supabase tables config. Matches supabase/migrations/001_initial_schema.sql",
+  "tables": [
+    {
+      "name": "leagues",
+      "primaryKey": "id",
+      "columns": [
+        { "name": "id", "type": "uuid", "default": "gen_random_uuid()" },
+        { "name": "name", "type": "text", "nullable": false },
+        { "name": "slug", "type": "text", "nullable": false, "unique": true },
+        { "name": "country", "type": "text", "nullable": true },
+        { "name": "api_external_id", "type": "text", "nullable": true },
+        { "name": "is_active", "type": "boolean", "nullable": false, "default": true },
+        { "name": "created_at", "type": "timestamptz", "nullable": false, "default": "now()" }
+      ],
+      "rls": true,
+      "policies": [{ "name": "Public read leagues", "operation": "select", "using": "true" }]
+    },
+    {
+      "name": "teams",
+      "primaryKey": "id",
+      "columns": [
+        { "name": "id", "type": "uuid", "default": "gen_random_uuid()" },
+        { "name": "league_id", "type": "uuid", "nullable": true, "references": "leagues(id)" },
+        { "name": "name", "type": "text", "nullable": false },
+        { "name": "short_name", "type": "text", "nullable": true },
+        { "name": "slug", "type": "text", "nullable": false },
+        { "name": "api_external_id", "type": "text", "nullable": true },
+        { "name": "created_at", "type": "timestamptz", "nullable": false, "default": "now()" }
+      ],
+      "unique": [["league_id", "slug"]],
+      "indexes": ["teams_league_slug(league_id, slug)", "teams_slug(slug)"],
+      "rls": true,
+      "policies": [{ "name": "Public read teams", "operation": "select", "using": "true" }]
+    },
+    {
+      "name": "fixtures",
+      "primaryKey": "id",
+      "columns": [
+        { "name": "id", "type": "uuid", "default": "gen_random_uuid()" },
+        { "name": "league_id", "type": "uuid", "nullable": false, "references": "leagues(id)" },
+        { "name": "home_team_id", "type": "uuid", "nullable": false, "references": "teams(id)" },
+        { "name": "away_team_id", "type": "uuid", "nullable": false, "references": "teams(id)" },
+        { "name": "slug", "type": "text", "nullable": false, "unique": true },
+        { "name": "started_at", "type": "timestamptz", "nullable": true },
+        { "name": "ended_at", "type": "timestamptz", "nullable": true },
+        { "name": "fixture_date", "type": "date", "nullable": false },
+        { "name": "status", "type": "text", "nullable": false, "default": "scheduled", "check": "scheduled | live | finished" },
+        { "name": "home_goals", "type": "int", "nullable": true },
+        { "name": "away_goals", "type": "int", "nullable": true },
+        { "name": "half_time_home", "type": "int", "nullable": true },
+        { "name": "half_time_away", "type": "int", "nullable": true },
+        { "name": "venue", "type": "text", "nullable": true },
+        { "name": "api_external_id", "type": "text", "nullable": true },
+        { "name": "raw_metadata", "type": "jsonb", "nullable": true },
+        { "name": "season", "type": "text", "nullable": true },
+        { "name": "matchday", "type": "int", "nullable": true },
+        { "name": "created_at", "type": "timestamptz", "nullable": false, "default": "now()" }
+      ],
+      "indexes": ["fixtures_slug(slug)", "fixtures_status_ended(status, ended_at)", "fixtures_league_date(league_id, fixture_date)", "fixtures_date(fixture_date)"],
+      "rls": true,
+      "policies": [{ "name": "Public read fixtures", "operation": "select", "using": "true" }]
+    },
+    {
+      "name": "fixture_stats",
+      "primaryKey": "id",
+      "columns": [
+        { "name": "id", "type": "uuid", "default": "gen_random_uuid()" },
+        { "name": "fixture_id", "type": "uuid", "nullable": false, "references": "fixtures(id) on delete cascade" },
+        { "name": "xg_home", "type": "numeric", "nullable": true },
+        { "name": "xg_away", "type": "numeric", "nullable": true },
+        { "name": "shots_on_target_home", "type": "int", "nullable": true },
+        { "name": "shots_on_target_away", "type": "int", "nullable": true },
+        { "name": "corners_home", "type": "int", "nullable": true },
+        { "name": "corners_away", "type": "int", "nullable": true },
+        { "name": "raw", "type": "jsonb", "nullable": true },
+        { "name": "created_at", "type": "timestamptz", "nullable": false, "default": "now()" }
+      ],
+      "unique": [["fixture_id"]],
+      "rls": true,
+      "policies": [{ "name": "Public read fixture_stats", "operation": "select", "using": "true" }]
+    },
+    {
+      "name": "fixture_lineups",
+      "primaryKey": "id",
+      "columns": [
+        { "name": "id", "type": "uuid", "default": "gen_random_uuid()" },
+        { "name": "fixture_id", "type": "uuid", "nullable": false, "references": "fixtures(id) on delete cascade" },
+        { "name": "team_id", "type": "uuid", "nullable": false, "references": "teams(id)" },
+        { "name": "formation", "type": "text", "nullable": true },
+        { "name": "source", "type": "text", "nullable": true },
+        { "name": "raw_metadata", "type": "jsonb", "nullable": true },
+        { "name": "captured_at", "type": "timestamptz", "nullable": false, "default": "now()" }
+      ],
+      "indexes": ["fixture_lineups_fixture(fixture_id)"],
+      "rls": true,
+      "policies": [{ "name": "Public read fixture_lineups", "operation": "select", "using": "true" }]
+    },
+    {
+      "name": "fixture_absences",
+      "primaryKey": "id",
+      "columns": [
+        { "name": "id", "type": "uuid", "default": "gen_random_uuid()" },
+        { "name": "fixture_id", "type": "uuid", "nullable": false, "references": "fixtures(id) on delete cascade" },
+        { "name": "team_id", "type": "uuid", "nullable": false, "references": "teams(id)" },
+        { "name": "player_name_or_id", "type": "text", "nullable": true },
+        { "name": "absence_type", "type": "text", "nullable": true, "check": "injury | suspension | rest | international" },
+        { "name": "impact_level", "type": "text", "nullable": true, "check": "key | high | medium | low" },
+        { "name": "source", "type": "text", "nullable": true },
+        { "name": "captured_at", "type": "timestamptz", "nullable": false, "default": "now()" }
+      ],
+      "indexes": ["fixture_absences_fixture(fixture_id)"],
+      "rls": true,
+      "policies": [{ "name": "Public read fixture_absences", "operation": "select", "using": "true" }]
+    },
+    {
+      "name": "odds",
+      "primaryKey": "id",
+      "columns": [
+        { "name": "id", "type": "uuid", "default": "gen_random_uuid()" },
+        { "name": "fixture_id", "type": "uuid", "nullable": false, "references": "fixtures(id) on delete cascade" },
+        { "name": "source", "type": "text", "nullable": false },
+        { "name": "market_type", "type": "text", "nullable": false },
+        { "name": "outcome_label", "type": "text", "nullable": true },
+        { "name": "odds_value", "type": "numeric", "nullable": false },
+        { "name": "captured_at", "type": "timestamptz", "nullable": false, "default": "now()" }
+      ],
+      "indexes": ["odds_fixture(fixture_id)"],
+      "rls": true,
+      "policies": [{ "name": "Public read odds", "operation": "select", "using": "true" }]
+    },
+    {
+      "name": "prediction_runs",
+      "primaryKey": "id",
+      "columns": [
+        { "name": "id", "type": "uuid", "default": "gen_random_uuid()" },
+        { "name": "run_at", "type": "timestamptz", "nullable": false, "default": "now()" },
+        { "name": "league_ids", "type": "uuid[]", "nullable": true },
+        { "name": "num_picks", "type": "int", "nullable": true },
+        { "name": "criteria_snapshot", "type": "jsonb", "nullable": true }
+      ],
+      "rls": true,
+      "policies": [{ "name": "Public read prediction_runs", "operation": "select", "using": "true" }]
+    },
+    {
+      "name": "predictions",
+      "primaryKey": "id",
+      "columns": [
+        { "name": "id", "type": "uuid", "default": "gen_random_uuid()" },
+        { "name": "fixture_id", "type": "uuid", "nullable": false, "references": "fixtures(id) on delete cascade" },
+        { "name": "prediction_run_id", "type": "uuid", "nullable": true, "references": "prediction_runs(id) on delete set null" },
+        { "name": "created_at", "type": "timestamptz", "nullable": false, "default": "now()" },
+        { "name": "updated_at", "type": "timestamptz", "nullable": false, "default": "now()" },
+        { "name": "status", "type": "text", "nullable": false, "default": "pending", "check": "pending | correct | incorrect | void" },
+        { "name": "prediction_type", "type": "text", "nullable": false },
+        { "name": "predicted_value", "type": "text", "nullable": false },
+        { "name": "confidence_score", "type": "numeric", "nullable": true },
+        { "name": "model_version", "type": "text", "nullable": true },
+        { "name": "local_model_output", "type": "jsonb", "nullable": true },
+        { "name": "frontier_explanation", "type": "text", "nullable": true },
+        { "name": "actual_result", "type": "jsonb", "nullable": true }
+      ],
+      "indexes": ["predictions_fixture_status(fixture_id, status)", "predictions_status(status)"],
+      "rls": true,
+      "policies": [{ "name": "Public read predictions", "operation": "select", "using": "true" }]
+    },
+    {
+      "name": "ranking_config",
+      "primaryKey": "id",
+      "columns": [
+        { "name": "id", "type": "uuid", "default": "gen_random_uuid()" },
+        { "name": "name", "type": "text", "nullable": false },
+        { "name": "is_active", "type": "boolean", "nullable": false, "default": false },
+        { "name": "weights", "type": "jsonb", "nullable": false, "default": "{}" },
+        { "name": "created_at", "type": "timestamptz", "nullable": false, "default": "now()" }
+      ],
+      "rls": true,
+      "policies": [{ "name": "Public read ranking_config", "operation": "select", "using": "true" }]
+    }
+  ],
+  "seed": {
+    "ranking_config": [
+      {
+        "name": "default",
+        "is_active": true,
+        "weights": {
+          "xg_weight": 0.15,
+          "form_weight": 0.2,
+          "h2h_weight": 0.1,
+          "home_advantage_weight": 0.1,
+          "shots_on_target_weight": 0.15,
+          "lineup_weight": 0.1,
+          "key_man_weight": 0.1
+        }
+      }
+    ]
+  }
+}
