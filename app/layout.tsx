@@ -1,10 +1,14 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Header } from "@/components/header";
 
 export const metadata: Metadata = {
   title: "Golden Goal – Smart picks for football lovers",
-  description: "Data-backed football picks. Filter by league and market, follow your slip, and level up your tipping.",
+  description:
+    "Data-backed football picks. Filter by league and market, follow your slip, and level up your tipping.",
+};
+
+export const viewport: Viewport = {
   themeColor: "#0b835c",
 };
 
