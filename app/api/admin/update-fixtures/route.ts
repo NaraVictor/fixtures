@@ -54,14 +54,17 @@ export async function POST() {
     if (predsError) throw predsError;
 
     // 3. Ask AI for results and prediction grading
+    const name = (x: { name?: string } | { name?: string }[] | null) =>
+      x == null ? undefined : Array.isArray(x) ? x[0]?.name : x.name;
+
     const prompt = JSON.stringify({
       fixtures: fixtures.map((f) => ({
         id: f.id,
         slug: f.slug,
         fixture_date: f.fixture_date,
-        league: f.league?.name,
-        home_team: f.home_team?.name,
-        away_team: f.away_team?.name,
+        league: name(f.league as { name?: string } | { name?: string }[] | null),
+        home_team: name(f.home_team as { name?: string } | { name?: string }[] | null),
+        away_team: name(f.away_team as { name?: string } | { name?: string }[] | null),
       })),
       predictions: pendingPreds ?? [],
     });
