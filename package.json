@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "@ai-sdk/deepseek": "^2.0.20",
+    "@iconify/react": "^6.0.2",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.97.0",
     "ai": "^6.0.99",
+    "date-fns": "^4.1.0",
     "dotenv": "^17.3.1",
     "next": "14.2.18",
     "react": "^18.3.1",

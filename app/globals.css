@@ -4,6 +4,265 @@
 
 @layer base {
   :root {
+    --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+    --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", monospace;
+    /* Brand – tipster / action green */
     --color-primary: #0b835c;
+    --color-primary-hover: #096b4a;
+    --color-primary-muted: rgba(11, 131, 92, 0.12);
+    --color-accent: #f59e0b;
+    --color-accent-muted: rgba(245, 158, 11, 0.15);
+
+    /* Light theme */
+    --bg-primary: #f8fafc;
+    --bg-secondary: #f1f5f9;
+    --bg-card: #ffffff;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --border-color: #e2e8f0;
+    --success-bg: #dcfce7;
+    --success-text: #166534;
+    --incorrect-bg: #fee2e2;
+    --incorrect-text: #991b1b;
+    --pending-bg: #fef3c7;
+    --pending-text: #92400e;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: #1e293b;
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #64748b;
+    --border-color: #334155;
+    --color-primary-muted: rgba(34, 197, 94, 0.2);
+    --color-accent-muted: rgba(245, 158, 11, 0.2);
+    --success-bg: rgba(34, 197, 94, 0.2);
+    --success-text: #86efac;
+    --incorrect-bg: rgba(239, 68, 68, 0.2);
+    --incorrect-text: #fca5a5;
+    --pending-bg: rgba(245, 158, 11, 0.2);
+    --pending-text: #fcd34d;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #1e293b;
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #64748b;
+      --border-color: #334155;
+      --color-primary-muted: rgba(34, 197, 94, 0.2);
+      --color-accent-muted: rgba(245, 158, 11, 0.2);
+      --success-bg: rgba(34, 197, 94, 0.2);
+      --success-text: #86efac;
+      --incorrect-bg: rgba(239, 68, 68, 0.2);
+      --incorrect-text: #fca5a5;
+      --pending-bg: rgba(245, 158, 11, 0.2);
+      --pending-text: #fcd34d;
+    }
+  }
+
+  /* Typography scale */
+  .text-heading-1 {
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+  }
+
+  .text-heading-2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--text-primary);
+  }
+
+  .text-body {
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+  }
+
+  .text-caption {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+}
+
+@layer components {
+  .container-narrow {
+    width: 100%;
+    max-width: 1024px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: clamp(1rem, 4vw, 1.5rem);
+    padding-right: clamp(1rem, 4vw, 1.5rem);
+  }
+
+  .tap-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.2s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
+
+  .card:active {
+    transform: translateY(0);
+    transition-duration: 0.1s;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    transition: transform 0.15s ease;
+  }
+
+  .badge:active {
+    transform: scale(0.98);
+  }
+
+  .badge--won {
+    background: var(--success-bg);
+    color: var(--success-text);
+  }
+
+  .badge--lost {
+    background: var(--incorrect-bg);
+    color: var(--incorrect-text);
+  }
+
+  .badge--pending {
+    background: var(--pending-bg);
+    color: var(--pending-text);
+  }
+
+  .badge--void {
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+  }
+
+  .confidence-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    background: var(--color-primary-muted);
+    color: var(--color-primary);
+    transition: transform 0.15s ease, filter 0.15s ease;
+  }
+
+  .card:hover .confidence-pill {
+    transform: scale(1.02);
+    filter: brightness(1.05);
+  }
+
+  [data-theme="dark"] .confidence-pill,
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .confidence-pill {
+      color: #4ade80;
+    }
+  }
+
+  .chip-row {
+    -webkit-overflow-scrolling: touch;
+    contain: layout style;
+  }
+
+  .chip-row::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .chip-row::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+  }
+
+  .pick-card {
+    transition: border-color 0.2s cubic-bezier(0.25, 1, 0.5, 1),
+      box-shadow 0.2s cubic-bezier(0.25, 1, 0.5, 1),
+      transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+
+  .pick-card:hover {
+    border-color: rgba(11, 131, 92, 0.35);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+  }
+
+  .pick-card:active {
+    transform: translateY(0);
+    transition-duration: 0.1s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pick-card,
+    .pick-card:hover,
+    .pick-card:active {
+      transition: none;
+      transform: none;
+    }
+  }
+
+  .pill-press:active {
+    transform: scale(0.97);
+  }
+
+  .pill-press {
+    transition: transform 0.1s ease, background-color 0.2s ease, color 0.2s ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card,
+    .card:hover,
+    .badge,
+    .confidence-pill,
+    .pill-press,
+    .pick-card {
+      transition: none;
+    }
+    .card:hover,
+    .pick-card:hover {
+      transform: none;
+    }
+    .card:hover .confidence-pill {
+      transform: none;
+      filter: none;
+    }
   }
 }

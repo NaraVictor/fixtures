@@ -1,0 +1,6 @@
+[
+  { "fixture_id": "c1b2c3d4-0002-4000-8000-000000000002", "team_id": "b1b2c3d4-0003-4000-8000-000000000003", "formation": "4-3-3", "full_line": ["Raya", "White", "Saliba", "Gabriel", "Zinchenko", "Ødegaard", "Rice", "Havertz", "Saka", "Jesus", "Martinelli"] },
+  { "fixture_id": "c1b2c3d4-0002-4000-8000-000000000002", "team_id": "b1b2c3d4-0004-4000-8000-000000000004", "formation": "4-2-3-1", "full_line": ["Ederson", "Walker", "Stones", "Días", "Aké", "Rodri", "Kovacic", "Foden", "De Bruyne", "Grealish", "Haaland"] },
+  { "fixture_id": "c1b2c3d4-0004-4000-8000-000000000004", "team_id": "b1b2c3d4-0005-4000-8000-000000000005", "formation": "4-3-3" },
+  { "fixture_id": "c1b2c3d4-0004-4000-8000-000000000004", "team_id": "b1b2c3d4-0001-4000-8000-000000000001", "formation": "4-2-3-1" }
+]

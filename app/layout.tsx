@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Header } from "@/components/header";
 
 export const metadata: Metadata = {
-  title: "Fixtures – AI predictions",
-  description: "AI-powered sports predictions and results",
+  title: "Golden Goal – Smart picks for football lovers",
+  description: "Data-backed football picks. Filter by league and market, follow your slip, and level up your tipping.",
   themeColor: "#0b835c",
 };
 
@@ -13,8 +14,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="antialiased">{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var t=document.documentElement.getAttribute('data-theme');if(!t&&!localStorage.getItem('theme')){document.documentElement.setAttribute('data-theme','dark');}})();`,
+          }}
+        />
+      </head>
+      <body className="min-h-screen antialiased">
+        <Header />
+        {children}
+      </body>
     </html>
   );
 }

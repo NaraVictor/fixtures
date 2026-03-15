@@ -1,0 +1,4 @@
+[
+  { "fixture_id": "c1b2c3d4-0001-4000-8000-000000000001", "team_id": "b1b2c3d4-0002-4000-8000-000000000002", "player_name_or_id": "Salah", "absence_type": "injury", "impact_level": "key" },
+  { "fixture_id": "c1b2c3d4-0003-4000-8000-000000000003", "team_id": "b1b2c3d4-0007-4000-8000-000000000007", "player_name_or_id": "Kane", "absence_type": "suspension", "impact_level": "high" }
+]

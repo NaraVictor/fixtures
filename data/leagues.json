@@ -1,0 +1,23 @@
+[
+  {
+    "id": "a1b2c3d4-0001-4000-8000-000000000001",
+    "name": "Premier League",
+    "slug": "epl",
+    "country": "England",
+    "is_active": true
+  },
+  {
+    "id": "a1b2c3d4-0002-4000-8000-000000000002",
+    "name": "Champions League",
+    "slug": "ucl",
+    "country": "Europe",
+    "is_active": true
+  },
+  {
+    "id": "a1b2c3d4-0003-4000-8000-000000000003",
+    "name": "Bundesliga",
+    "slug": "bundesliga",
+    "country": "Germany",
+    "is_active": true
+  }
+]

@@ -1,0 +1,12 @@
+[
+  { "id": "b1b2c3d4-0001-4000-8000-000000000001", "league_id": "a1b2c3d4-0001-4000-8000-000000000001", "name": "Manchester United", "short_name": "Man United", "slug": "manchester-united" },
+  { "id": "b1b2c3d4-0002-4000-8000-000000000002", "league_id": "a1b2c3d4-0001-4000-8000-000000000001", "name": "Liverpool", "short_name": "Liverpool", "slug": "liverpool" },
+  { "id": "b1b2c3d4-0003-4000-8000-000000000003", "league_id": "a1b2c3d4-0001-4000-8000-000000000001", "name": "Arsenal", "short_name": "Arsenal", "slug": "arsenal" },
+  { "id": "b1b2c3d4-0004-4000-8000-000000000004", "league_id": "a1b2c3d4-0001-4000-8000-000000000001", "name": "Manchester City", "short_name": "Man City", "slug": "manchester-city" },
+  { "id": "b1b2c3d4-0005-4000-8000-000000000005", "league_id": "a1b2c3d4-0001-4000-8000-000000000001", "name": "Chelsea", "short_name": "Chelsea", "slug": "chelsea" },
+  { "id": "b1b2c3d4-0006-4000-8000-000000000006", "league_id": "a1b2c3d4-0002-4000-8000-000000000002", "name": "Real Madrid", "short_name": "Real Madrid", "slug": "real-madrid" },
+  { "id": "b1b2c3d4-0007-4000-8000-000000000007", "league_id": "a1b2c3d4-0002-4000-8000-000000000002", "name": "Bayern Munich", "short_name": "Bayern", "slug": "bayern-munich" },
+  { "id": "b1b2c3d4-0008-4000-8000-000000000008", "league_id": "a1b2c3d4-0002-4000-8000-000000000002", "name": "Paris Saint-Germain", "short_name": "PSG", "slug": "paris-saint-germain" },
+  { "id": "b1b2c3d4-0009-4000-8000-000000000009", "league_id": "a1b2c3d4-0003-4000-8000-000000000003", "name": "Borussia Dortmund", "short_name": "Dortmund", "slug": "borussia-dortmund" },
+  { "id": "b1b2c3d4-0010-4000-8000-000000000010", "league_id": "a1b2c3d4-0003-4000-8000-000000000003", "name": "RB Leipzig", "short_name": "Leipzig", "slug": "rb-leipzig" }
+]

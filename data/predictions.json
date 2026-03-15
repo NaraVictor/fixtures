@@ -1,0 +1,86 @@
+[
+  {
+    "id": "d1b2c3d4-0001-4000-8000-000000000001",
+    "fixture_id": "c1b2c3d4-0001-4000-8000-000000000001",
+    "status": "pending",
+    "prediction_type": "1x2",
+    "predicted_value": "1",
+    "confidence_score": 0.92,
+    "frontier_explanation": "Home xG 1.85 vs away 1.12 over 5-game window. MRA: home underperforming (value pick). Travel penalty applied for away side.",
+    "model_version": "v5.8",
+    "local_model_output": { "mra_signal": "Underperforming", "staking_unit": 2 },
+    "created_at": "2025-03-14T08:00:00Z"
+  },
+  {
+    "id": "d1b2c3d4-0002-4000-8000-000000000002",
+    "fixture_id": "c1b2c3d4-0001-4000-8000-000000000001",
+    "status": "pending",
+    "prediction_type": "over_under_2_5",
+    "predicted_value": "over",
+    "confidence_score": 0.88,
+    "frontier_explanation": "Combined xG 2.97; both sides attack-minded. No fatigue flag.",
+    "model_version": "v5.8",
+    "local_model_output": { "mra_signal": "Stable", "staking_unit": 1 },
+    "created_at": "2025-03-14T08:00:00Z"
+  },
+  {
+    "id": "d1b2c3d4-0003-4000-8000-000000000003",
+    "fixture_id": "c1b2c3d4-0002-4000-8000-000000000002",
+    "status": "correct",
+    "prediction_type": "1x2",
+    "predicted_value": "1",
+    "confidence_score": 0.91,
+    "frontier_explanation": "Arsenal home xG edge; keyman absence away. Result: 2-1 home win.",
+    "model_version": "v5.8",
+    "local_model_output": { "mra_signal": "Stable", "staking_unit": 2 },
+    "created_at": "2025-03-14T07:00:00Z"
+  },
+  {
+    "id": "d1b2c3d4-0004-4000-8000-000000000004",
+    "fixture_id": "c1b2c3d4-0002-4000-8000-000000000002",
+    "status": "correct",
+    "prediction_type": "over_under_2_5",
+    "predicted_value": "over",
+    "confidence_score": 0.85,
+    "frontier_explanation": "Over 2.5 goals. Final 2-1.",
+    "model_version": "v5.8",
+    "local_model_output": null,
+    "created_at": "2025-03-14T07:00:00Z"
+  },
+  {
+    "id": "d1b2c3d4-0005-4000-8000-000000000005",
+    "fixture_id": "c1b2c3d4-0003-4000-8000-000000000003",
+    "status": "pending",
+    "prediction_type": "handicap",
+    "predicted_value": "home -0.5",
+    "confidence_score": 0.90,
+    "frontier_explanation": "Real Madrid AH -0.5 at home. xG spread favours home; CLV vs closing line.",
+    "model_version": "v5.8",
+    "local_model_output": { "mra_signal": "Underperforming", "staking_unit": 2 },
+    "created_at": "2025-03-15T06:00:00Z"
+  },
+  {
+    "id": "d1b2c3d4-0006-4000-8000-000000000006",
+    "fixture_id": "c1b2c3d4-0004-4000-8000-000000000004",
+    "status": "incorrect",
+    "prediction_type": "1x2",
+    "predicted_value": "1",
+    "confidence_score": 0.78,
+    "frontier_explanation": "Chelsea home lean; ended 0-0 draw.",
+    "model_version": "v5.8",
+    "local_model_output": null,
+    "created_at": "2025-03-13T08:00:00Z"
+  },
+  {
+    "id": "d1b2c3d4-0007-4000-8000-000000000007",
+    "fixture_id": "c1b2c3d4-0005-4000-8000-000000000005",
+    "status": "pending",
+    "prediction_type": "btts",
+    "predicted_value": "yes",
+    "confidence_score": 0.87,
+    "frontier_explanation": "Both teams to score. High SoT from both; humidity pivot not triggered.",
+    "model_version": "v5.8",
+    "local_model_output": { "mra_signal": "Stable", "staking_unit": 1 },
+    "created_at": "2025-03-15T09:00:00Z"
+  }
+]

@@ -1,58 +1,31 @@
 import Link from "next/link";
-import { cache } from "react";
-import { cookies } from "next/headers";
-import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import {
+  getFixtureBySlug,
+  getPredictionsForFixture,
+  getLineupsForFixture,
+  getAbsencesForFixture,
+  getLeagueAccuracy,
+  getTeamPosition,
+} from "@/lib/data";
+import { formatDate, formatDateTime, formatMarketAndPick, ordinal } from "@/lib/format";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 
-export const revalidate = 30;
-
-type FixtureRow = {
-  id: string;
-  slug: string;
-  league_id: string;
-  home_team_id: string;
-  away_team_id: string;
-  fixture_date: string;
-  started_at: string | null;
-  ended_at: string | null;
-  status: string;
-  home_goals: number | null;
-  away_goals: number | null;
-  half_time_home: number | null;
-  half_time_away: number | null;
-  venue: string | null;
-  raw_metadata: { referee?: string } | null;
-  home_team: { id: string; name: string; slug: string } | { id: string; name: string; slug: string }[];
-  away_team: { id: string; name: string; slug: string } | { id: string; name: string; slug: string }[];
-  league: { id: string; name: string; slug: string } | { id: string; name: string; slug: string }[];
-};
-
-const getFixture = cache(async (slug: string) => {
-  const supabase = createClient(await cookies());
-  const { data, error } = await supabase
-    .from("fixtures")
-    .select(
-      "id, slug, league_id, fixture_date, started_at, ended_at, status, home_goals, away_goals, half_time_home, half_time_away, venue, raw_metadata, home_team:teams!fixtures_home_team_id_fkey(id, name, slug), away_team:teams!fixtures_away_team_id_fkey(id, name, slug), league:leagues(id, name, slug)"
-    )
-    .eq("slug", slug)
-    .single();
-  if (error || !data) return { fixture: null, supabase };
-  return { fixture: data as unknown as FixtureRow, supabase };
-});
-
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
   const { slug } = await params;
-  const { fixture } = await getFixture(slug);
+  const fixture = getFixtureBySlug(slug);
   if (!fixture) return { title: "Fixture" };
-  const ht = Array.isArray(fixture.home_team) ? fixture.home_team[0] : fixture.home_team;
-  const at = Array.isArray(fixture.away_team) ? fixture.away_team[0] : fixture.away_team;
-  const league = Array.isArray(fixture.league) ? fixture.league[0] : fixture.league;
-  const title = `${ht?.name ?? "Home"} v ${at?.name ?? "Away"} | ${league?.name ?? "Fixture"}`;
+  const title = `${fixture.home_team?.name ?? "Home"} v ${fixture.away_team?.name ?? "Away"} | ${fixture.league?.name ?? "Fixture"}`;
   const description =
     fixture.status === "finished"
       ? `Final score: ${fixture.home_goals ?? 0}–${fixture.away_goals ?? 0}`
-      : `${league?.name ?? "Match"} – ${fixture.fixture_date}`;
+      : `${fixture.league?.name ?? "Match"} – ${fixture.fixture_date}`;
   return {
     title,
     description,
@@ -60,203 +33,267 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-export default async function FixturePage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function FixturePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const { slug } = await params;
-  const { fixture, supabase } = await getFixture(slug);
+  const fixture = getFixtureBySlug(slug);
   if (!fixture) notFound();
 
-  const [
-    { data: predictions },
-    { data: lineups },
-    { data: absences },
-  ] = await Promise.all([
-    supabase
-      .from("predictions")
-      .select("id, status, prediction_type, predicted_value, confidence_score, frontier_explanation, local_model_output, model_version, created_at")
-      .eq("fixture_id", fixture.id)
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("fixture_lineups")
-      .select("formation, team_id, teams(name)")
-      .eq("fixture_id", fixture.id),
-    supabase
-      .from("fixture_absences")
-      .select("player_name_or_id, absence_type, impact_level, team_id, teams(name)")
-      .eq("fixture_id", fixture.id),
-  ]);
+  const [predictions, lineups, absences, leagueAccuracy] = [
+    getPredictionsForFixture(fixture.id),
+    getLineupsForFixture(fixture.id),
+    getAbsencesForFixture(fixture.id),
+    fixture.league_id ? getLeagueAccuracy(fixture.league_id) : { correct: 0, total: 0 },
+  ];
 
-  let leagueAccuracy = { correct: 0, total: 0 };
-  if (fixture.league_id) {
-    const { data: fixIds } = await supabase.from("fixtures").select("id").eq("league_id", fixture.league_id).limit(200);
-    const ids = (fixIds ?? []).map((x: { id: string }) => x.id);
-    if (ids.length > 0) {
-      const { data: preds } = await supabase
-        .from("predictions")
-        .select("status")
-        .in("fixture_id", ids)
-        .in("status", ["correct", "incorrect"])
-        .limit(300);
-      leagueAccuracy = {
-        correct: (preds ?? []).filter((r: { status: string }) => r.status === "correct").length,
-        total: (preds ?? []).length,
-      };
-    }
-  }
-
-  const f = {
-    ...fixture,
-    home_team: Array.isArray(fixture.home_team) ? fixture.home_team[0] : fixture.home_team,
-    away_team: Array.isArray(fixture.away_team) ? fixture.away_team[0] : fixture.away_team,
-    league: Array.isArray(fixture.league) ? fixture.league[0] : fixture.league,
-  };
-  const lineupList = (lineups ?? []) as unknown as Array<{ formation: string | null; team_id: string; teams: { name: string } | null }>;
-  const absenceList = (absences ?? []) as unknown as Array<{
-    player_name_or_id: string | null;
-    absence_type: string;
-    impact_level: string;
-    team_id: string;
-    teams: { name: string } | null;
-  }>;
+  const homePosition =
+    fixture.league_id && fixture.home_team_id
+      ? getTeamPosition(fixture.home_team_id, fixture.league_id)
+      : null;
+  const awayPosition =
+    fixture.league_id && fixture.away_team_id
+      ? getTeamPosition(fixture.away_team_id, fixture.league_id)
+      : null;
+  const homeName = fixture.home_team?.name ?? "Home";
+  const awayName = fixture.away_team?.name ?? "Away";
+  const matchLabel = `${homeName}${homePosition ? ` (${ordinal(homePosition)})` : ""} v ${awayName}${awayPosition ? ` (${ordinal(awayPosition)})` : ""}`;
+  const weather = fixture.raw_metadata?.weather ?? null;
+  const keymanAbsences = absences.filter((a) => a.impact_level.toLowerCase() === "key");
+  const hasLineupSection = lineups.length > 0 || absences.length > 0 || weather;
 
   return (
-    <main className="min-h-screen p-6">
-      <Link href="/" className="text-sm text-gray-600 hover:underline">
-        ← Back to predictions
-      </Link>
-      <header className="mt-4">
-        <h1 className="text-2xl font-bold">
-          {f.home_team?.name ?? "Home"} v {f.away_team?.name ?? "Away"}
-        </h1>
-        <p className="text-gray-600">{f.league?.name}</p>
-      </header>
+    <main className="min-h-screen">
+      <div className="container-narrow py-6 md:py-8">
+        <Breadcrumbs
+          items={[
+            { label: "Picks", href: "/" },
+            { label: matchLabel },
+          ]}
+        />
 
-      <section className="mt-6 rounded border border-gray-200 p-4">
-        <h2 className="font-semibold">Fixture</h2>
-        <dl className="mt-2 grid gap-1 text-sm">
-          <div>
-            <span className="text-gray-500">Date:</span> {f.fixture_date}
-          </div>
-          {f.started_at && (
-            <div>
-              <span className="text-gray-500">Started:</span> {new Date(f.started_at).toLocaleString()}
-            </div>
-          )}
-          {f.ended_at && (
-            <div>
-              <span className="text-gray-500">Ended:</span> {new Date(f.ended_at).toLocaleString()}
-            </div>
-          )}
-          <div>
-            <span className="text-gray-500">Status:</span> <span className="capitalize">{f.status}</span>
-          </div>
-          {f.status === "finished" && (
-            <div>
-              <span className="text-gray-500">Score:</span> {f.home_goals ?? 0} – {f.away_goals ?? 0}
-              {f.half_time_home != null && (
-                <span className="ml-2 text-gray-500">(HT {f.half_time_home}–{f.half_time_away})</span>
-              )}
-            </div>
-          )}
-          {f.venue && (
-            <div>
-              <span className="text-gray-500">Venue:</span> {f.venue}
-            </div>
-          )}
-          {f.raw_metadata?.referee && (
-            <div>
-              <span className="text-gray-500">Referee:</span> {f.raw_metadata.referee}
-            </div>
-          )}
-        </dl>
-      </section>
-
-      {predictions?.length ? (
-        <section className="mt-6 rounded border border-gray-200 p-4">
-          <h2 className="font-semibold">Predictions</h2>
-          <ul className="mt-2 space-y-2">
-            {(predictions as Array<{
-              id: string;
-              status: string;
-              prediction_type: string;
-              predicted_value: string;
-              confidence_score: number | null;
-              frontier_explanation: string | null;
-              local_model_output: Record<string, unknown> | null;
-              model_version: string | null;
-              created_at: string;
-            }>).map((p) => (
-              <li key={p.id} className="border-l-2 border-gray-300 pl-3">
-                <div className="font-medium">
-                  {p.prediction_type} → {p.predicted_value}
-                  {p.confidence_score != null && (
-                    <span className="ml-2 text-gray-600">({(p.confidence_score * 100).toFixed(0)}%)</span>
-                  )}
-                  {p.model_version && (
-                    <span className="ml-2 text-xs text-gray-400">model {p.model_version}</span>
-                  )}
-                </div>
-                <div className="text-sm capitalize text-gray-500">Status: {p.status}</div>
-                {p.frontier_explanation && (
-                  <p className="mt-1 text-sm text-gray-700">{p.frontier_explanation}</p>
-                )}
-                {p.local_model_output && typeof p.local_model_output === "object" && (
-                  <p className="mt-1 text-xs text-gray-600">
-                    Model: {JSON.stringify(p.local_model_output).slice(0, 120)}
-                    {JSON.stringify(p.local_model_output).length > 120 ? "…" : ""}
-                  </p>
-                )}
-                <div className="text-xs text-gray-400">{new Date(p.created_at).toLocaleString()}</div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : (
-        <p className="mt-6 text-gray-500">No predictions for this fixture.</p>
-      )}
-
-      {leagueAccuracy.total > 0 && (
-        <section className="mt-6 rounded border border-gray-200 p-4">
-          <h2 className="font-semibold">Previous performance (league)</h2>
-          <p className="mt-1 text-sm text-gray-600">
-            Recent predictions in {f.league?.name}: {leagueAccuracy.correct} correct of {leagueAccuracy.total} ({((leagueAccuracy.correct / leagueAccuracy.total) * 100).toFixed(0)}%).
+        <header className="mt-4">
+          <h1 className="text-heading-1">{matchLabel}</h1>
+          <p className="mt-1 text-body text-[var(--text-secondary)]">
+            {fixture.league?.name}
+            {fixture.status === "finished" && (
+              <span className="ml-2 font-mono font-semibold tabular-nums text-[var(--text-primary)]">
+                {fixture.home_goals ?? 0}–{fixture.away_goals ?? 0}
+              </span>
+            )}
           </p>
-        </section>
-      )}
+        </header>
 
-      {(lineupList.length > 0 || absenceList.length > 0) && (
-        <section className="mt-6 rounded border border-gray-200 p-4">
-          <h2 className="font-semibold">Lineups & absences</h2>
-          {lineupList.length > 0 && (
-            <div className="mt-2">
-              <h3 className="text-sm font-medium text-gray-700">Formations</h3>
-              <ul className="mt-1 space-y-1 text-sm">
-                {lineupList.map((l, i) => (
-                  <li key={i}>
-                    {(l.teams as { name: string } | null)?.name ?? "Team"}: {l.formation ?? "—"}
-                  </li>
-                ))}
-              </ul>
+        <section
+          className="fixture-detail-section mt-8 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-5"
+          aria-labelledby="fixture-details-heading"
+        >
+          <h2 id="fixture-details-heading" className="text-heading-2 mb-4">
+            Details
+          </h2>
+          <dl className="grid gap-x-6 gap-y-3 text-body sm:grid-cols-2">
+            <div>
+              <dt className="text-caption text-[var(--text-muted)]">Date</dt>
+              <dd>{formatDate(fixture.fixture_date, "MMM d")}</dd>
             </div>
-          )}
-          {absenceList.length > 0 && (
-            <div className="mt-3">
-              <h3 className="text-sm font-medium text-gray-700">Absences</h3>
-              <ul className="mt-1 space-y-1 text-sm">
-                {absenceList.map((a, i) => (
-                  <li key={i} className="capitalize">
-                    {a.player_name_or_id ?? "Player"} ({a.absence_type}, {a.impact_level} impact)
-                    {(a.teams as { name: string } | null)?.name && ` – ${(a.teams as { name: string }).name}`}
-                  </li>
-                ))}
-              </ul>
+            <div>
+              <dt className="text-caption text-[var(--text-muted)]">Status</dt>
+              <dd className="capitalize">{fixture.status}</dd>
             </div>
-          )}
+            {fixture.started_at && (
+              <div>
+                <dt className="text-caption text-[var(--text-muted)]">Kick-off</dt>
+                <dd>{formatDateTime(fixture.started_at)}</dd>
+              </div>
+            )}
+            {fixture.ended_at && (
+              <div>
+                <dt className="text-caption text-[var(--text-muted)]">Full time</dt>
+                <dd>{formatDateTime(fixture.ended_at)}</dd>
+              </div>
+            )}
+            {fixture.status === "finished" && fixture.half_time_home != null && (
+              <div className="sm:col-span-2">
+                <dt className="text-caption text-[var(--text-muted)]">Half-time</dt>
+                <dd className="font-mono tabular-nums">
+                  {fixture.half_time_home}–{fixture.half_time_away}
+                </dd>
+              </div>
+            )}
+            {fixture.venue && (
+              <div>
+                <dt className="text-caption text-[var(--text-muted)]">Venue</dt>
+                <dd>{fixture.venue}</dd>
+              </div>
+            )}
+            {fixture.raw_metadata?.referee && (
+              <div>
+                <dt className="text-caption text-[var(--text-muted)]">Referee</dt>
+                <dd>{fixture.raw_metadata.referee}</dd>
+              </div>
+            )}
+          </dl>
         </section>
-      )}
 
-      <footer className="mt-8 text-sm text-gray-500">
-        <Link href="/office" className="underline">Office</Link>
-      </footer>
+        {predictions.length > 0 && (
+          <section
+            className="fixture-detail-section mt-6 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-5"
+            aria-labelledby="predictions-heading"
+          >
+            <h2 id="predictions-heading" className="text-heading-2 mb-4">
+              Predictions
+            </h2>
+            <ul className="space-y-4" role="list">
+              {predictions.map((p) => (
+                <li
+                  key={p.id}
+                  className="border-l-2 border-[var(--color-primary)]/40 pl-4"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold text-[var(--text-primary)]">
+                      {formatMarketAndPick(p.prediction_type, p.predicted_value)}
+                    </span>
+                    {p.confidence_score != null && (
+                      <span className="confidence-pill">
+                        {(p.confidence_score * 100).toFixed(0)}%
+                      </span>
+                    )}
+                    <StatusBadge status={p.status} />
+                  </div>
+                  {p.frontier_explanation && (
+                    <p className="mt-2 text-body text-[var(--text-secondary)] whitespace-pre-wrap">
+                      {p.frontier_explanation}
+                    </p>
+                  )}
+                  {p.local_model_output &&
+                    typeof p.local_model_output === "object" &&
+                    Object.keys(p.local_model_output).length > 0 && (
+                      <p className="mt-1 text-caption text-[var(--text-muted)]">
+                        Edge: {(p.local_model_output as { mra_signal?: string }).mra_signal ?? "—"} · Units: {(p.local_model_output as { staking_unit?: number }).staking_unit ?? "—"}
+                      </p>
+                    )}
+                  <p className="mt-1 text-caption text-[var(--text-muted)]">
+                    {formatDateTime(p.created_at)}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {predictions.length === 0 && (
+          <p className="mt-6 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-5 text-body text-[var(--text-muted)]">
+            No picks for this match yet.
+          </p>
+        )}
+
+        {leagueAccuracy.total > 0 && (
+          <section
+            className="fixture-detail-section mt-6 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-5"
+            aria-labelledby="league-performance-heading"
+          >
+            <h2 id="league-performance-heading" className="text-heading-2 mb-2">
+              League performance
+            </h2>
+            <p className="text-body text-[var(--text-secondary)]">
+              In {fixture.league?.name}:{" "}
+              <strong className="text-[var(--text-primary)]">
+                {leagueAccuracy.correct} won
+              </strong>{" "}
+              of {leagueAccuracy.total} (
+              {((leagueAccuracy.correct / leagueAccuracy.total) * 100).toFixed(0)}%).
+            </p>
+          </section>
+        )}
+
+        {hasLineupSection && (
+          <section
+            className="fixture-detail-section mt-6 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-5"
+            aria-labelledby="lineups-heading"
+          >
+            <h2 id="lineups-heading" className="text-heading-2 mb-4">
+              Lineups & absences
+            </h2>
+            {weather && (
+              <div className="mb-4">
+                <h3 className="text-body font-medium text-[var(--text-primary)]">Weather</h3>
+                <p className="mt-1 text-body text-[var(--text-secondary)]">{weather}</p>
+              </div>
+            )}
+            {lineups.length > 0 && (
+              <div className={weather ? "mt-4" : ""}>
+                <h3 className="text-body font-medium text-[var(--text-primary)]">Formations</h3>
+                <ul className="mt-2 space-y-1 text-body text-[var(--text-secondary)]">
+                  {lineups.map((l, i) => (
+                    <li key={i}>
+                      {l.team_name}: {l.formation ?? "—"}
+                    </li>
+                  ))}
+                </ul>
+                {lineups.some((l) => l.full_line && l.full_line.length > 0) && (
+                  <div className="mt-4">
+                    <h3 className="text-body font-medium text-[var(--text-primary)]">Full line</h3>
+                    {lineups.map(
+                      (l, i) =>
+                        l.full_line &&
+                        l.full_line.length > 0 && (
+                          <div key={i} className="mt-2">
+                            <p className="text-caption font-medium text-[var(--text-muted)]">
+                              {l.team_name}
+                            </p>
+                            <p className="mt-0.5 text-body text-[var(--text-secondary)]">
+                              {l.full_line.join(", ")}
+                            </p>
+                          </div>
+                        )
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            {keymanAbsences.length > 0 && (
+              <div className={lineups.length > 0 || weather ? "mt-4" : ""}>
+                <h3 className="text-body font-medium text-[var(--text-primary)]">
+                  Missing key players
+                </h3>
+                <ul className="mt-2 space-y-1 text-body text-[var(--text-secondary)]">
+                  {keymanAbsences.map((a, i) => (
+                    <li key={i} className="capitalize">
+                      {a.player_name_or_id ?? "Player"} ({a.absence_type}) – {a.team_name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {absences.length > 0 && keymanAbsences.length < absences.length && (
+              <div className="mt-4">
+                <h3 className="text-body font-medium text-[var(--text-primary)]">Other absences</h3>
+                <ul className="mt-2 space-y-1 text-body text-[var(--text-secondary)]">
+                  {absences
+                    .filter((a) => a.impact_level.toLowerCase() !== "key")
+                    .map((a, i) => (
+                      <li key={i} className="capitalize">
+                        {a.player_name_or_id ?? "Player"} ({a.absence_type},{" "}
+                        {a.impact_level} impact) – {a.team_name}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            )}
+          </section>
+        )}
+
+        <footer className="mt-10 flex gap-4 text-caption text-[var(--text-muted)]">
+          <Link href="/" className="underline hover:no-underline hover:text-[var(--color-primary)]">
+            ← Picks
+          </Link>
+          <Link href="/office" className="underline hover:no-underline hover:text-[var(--color-primary)]">
+            Office
+          </Link>
+        </footer>
+      </div>
     </main>
   );
 }
