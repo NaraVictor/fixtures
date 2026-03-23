@@ -90,11 +90,45 @@ export function formatPickLabel(
   return predictedValue || "";
 }
 
+/** Coerce stored confidence to [0, 1]; supports 0–100 from APIs. */
+export function normalizeConfidenceScore(raw: unknown): number | null {
+  if (raw == null) return null;
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(n)) return null;
+  if (n > 1 && n <= 100) return n / 100;
+  if (n >= 0 && n <= 1) return n;
+  return null;
+}
+
 /** Ordinal for table position e.g. 1 → "1st", 2 → "2nd", 3 → "3rd" */
 export function ordinal(n: number): string {
   const s = ["th", "st", "nd", "rd"];
   const v = n % 100;
   return n + (s[(v - 20) % 10] ?? s[v] ?? s[0]);
+}
+
+/** Kick-off time only, 24h e.g. "14:30" */
+export function formatKickoffTime(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleTimeString("en-GB", {
+    timeZone: GMT,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
+/** Compact date e.g. "30 OCT" */
+export function formatKickoffDateCompact(iso: string): string {
+  const d = new Date(iso);
+  return d
+    .toLocaleDateString("en-GB", {
+      timeZone: GMT,
+      day: "numeric",
+      month: "short",
+    })
+    .toUpperCase()
+    .replace(/\s/g, " ");
 }
 
 /** Single line for "market · pick" e.g. "1X2 · Home" or "Over/under 2.5 · Over 2.5" */
@@ -107,4 +141,26 @@ export function formatMarketAndPick(
   if (!market && !pick) return "";
   if (!pick) return market;
   return `${market} · ${pick}`;
+}
+
+/** Short code for scoreboard e.g. CHE, ARS, MU */
+export function teamAbbrev(name: string, shortName?: string | null): string {
+  const primary = (shortName?.trim() || name).trim() || "?";
+  const words = primary.split(/\s+/).filter(Boolean);
+  if (words.length >= 2) {
+    const fromWords = words.map((w) => w[0]).join("").toUpperCase();
+    if (fromWords.length >= 3) return fromWords.slice(0, 3);
+    if (fromWords.length === 2) return fromWords;
+  }
+  const letters = primary.replace(/[^a-zA-Z]/g, "");
+  return (letters.slice(0, 3) || "?").toUpperCase();
+}
+
+/** Calendar week 1–52 for fixture date (UTC). */
+export function weekOfYear(isoDate: string): number {
+  const d = new Date(isoDate);
+  const start = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const day = Math.floor((+d - +start) / 86400000);
+  const w = Math.ceil((day + start.getUTCDay() + 1) / 7);
+  return Math.min(w, 52);
 }

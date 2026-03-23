@@ -27,6 +27,16 @@
     --incorrect-text: #991b1b;
     --pending-bg: #fef3c7;
     --pending-text: #92400e;
+
+    --match-card-bg: #ffffff;
+    --match-card-text: #0f172a;
+    --match-card-muted: #64748b;
+    --match-card-border: #e2e8f0;
+    --match-card-chip-bg: #f1f5f9;
+
+    --nav-pill-bg: rgba(255, 255, 255, 0.92);
+    --nav-pill-border: rgba(148, 163, 184, 0.4);
+    --nav-pill-icon: #64748b;
   }
 
   [data-theme="dark"] {
@@ -45,6 +55,15 @@
     --incorrect-text: #fca5a5;
     --pending-bg: rgba(245, 158, 11, 0.2);
     --pending-text: #fcd34d;
+    --match-card-bg: #1e293b;
+    --match-card-text: #f8fafc;
+    --match-card-muted: #94a3b8;
+    --match-card-border: #334155;
+    --match-card-chip-bg: #0f172a;
+
+    --nav-pill-bg: rgba(24, 24, 27, 0.85);
+    --nav-pill-border: rgba(255, 255, 255, 0.1);
+    --nav-pill-icon: rgba(255, 255, 255, 0.55);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -64,6 +83,15 @@
       --incorrect-text: #fca5a5;
       --pending-bg: rgba(245, 158, 11, 0.2);
       --pending-text: #fcd34d;
+      --match-card-bg: #1e293b;
+      --match-card-text: #f8fafc;
+      --match-card-muted: #94a3b8;
+      --match-card-border: #334155;
+      --match-card-chip-bg: #0f172a;
+
+      --nav-pill-bg: rgba(24, 24, 27, 0.85);
+      --nav-pill-border: rgba(255, 255, 255, 0.1);
+      --nav-pill-icon: rgba(255, 255, 255, 0.55);
     }
   }
 
@@ -103,9 +131,24 @@
 }
 
 @layer components {
+  .match-card {
+    background-color: var(--match-card-bg);
+    border-color: var(--match-card-border);
+    color: var(--match-card-text);
+  }
+
   .container-narrow {
     width: 100%;
     max-width: 1024px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: clamp(1rem, 4vw, 1.5rem);
+    padding-right: clamp(1rem, 4vw, 1.5rem);
+  }
+
+  .container-wide {
+    width: 100%;
+    max-width: 1200px;
     margin-left: auto;
     margin-right: auto;
     padding-left: clamp(1rem, 4vw, 1.5rem);
@@ -123,7 +166,7 @@
   .card {
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 12px;
+    border-radius: 0.75rem;
     padding: 1rem 1.25rem;
     transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.2s ease;
   }
@@ -142,7 +185,7 @@
     display: inline-flex;
     align-items: center;
     padding: 0.25rem 0.5rem;
-    border-radius: 6px;
+    border-radius: 0.75rem;
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: capitalize;
@@ -173,13 +216,22 @@
     color: var(--text-muted);
   }
 
+  .match-surface .badge--void {
+    background: var(--match-card-chip-bg);
+    color: var(--match-card-muted);
+  }
+
+  .match-surface .confidence-pill {
+    color: var(--color-primary);
+  }
+
   .confidence-pill {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     min-width: 2.5rem;
     padding: 0.25rem 0.5rem;
-    border-radius: 8px;
+    border-radius: 0.75rem;
     font-size: 0.875rem;
     font-weight: 700;
     background: var(--color-primary-muted);
@@ -200,6 +252,47 @@
     :root:not([data-theme="light"]) .confidence-pill {
       color: #4ade80;
     }
+  }
+
+  [data-theme="dark"] .match-surface .confidence-pill {
+    color: var(--color-primary);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .match-surface .confidence-pill {
+      color: var(--color-primary);
+    }
+  }
+
+  .skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+    background: var(--bg-secondary);
+  }
+
+  .skeleton-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--border-color) 60%, transparent),
+      transparent
+    );
+    animation: skeleton-wave 1.25s ease-in-out infinite;
+  }
+
+  @keyframes skeleton-wave {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .match-surface:hover .confidence-pill {
+    transform: scale(1.02);
+    filter: brightness(1.05);
   }
 
   .chip-row {
@@ -263,9 +356,13 @@
     .pick-card:hover {
       transform: none;
     }
-    .card:hover .confidence-pill {
+    .card:hover .confidence-pill,
+    .match-surface:hover .confidence-pill {
       transform: none;
       filter: none;
+    }
+    .skeleton-shimmer::after {
+      animation: none;
     }
   }
 }

@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { Header } from "@/components/header";
+import { BottomNav } from "@/components/bottom-nav";
 
 export const metadata: Metadata = {
-  title: "Golden Goal – Smart picks for football lovers",
+  title: "Moon Odds – AI football tips & picks",
   description:
-    "Data-backed football picks. Filter by league and market, follow your slip, and level up your tipping.",
+    "Winning football tips from smart analysis. Browse fixtures, confidence scores, and match breakdowns.",
 };
 
 export const viewport: Viewport = {
@@ -27,8 +27,10 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen antialiased">
-        <Header />
-        {children}
+        <div className="pb-[calc(6.05rem+env(safe-area-inset-bottom,0px))]">
+          {children}
+        </div>
+        <BottomNav />
       </body>
     </html>
   );
